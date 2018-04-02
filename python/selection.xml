@@ -1,0 +1,13 @@
+
+<lcgdict>
+    <selection>
+
+            <class name="tricktrack::TTPoint">
+              <field name="m_registry" transient="true"/>
+              <field name="m_container" transient="true"/>
+            </class>
+
+
+
+    </selection>
+</lcgdict>
