@@ -11,6 +11,14 @@ namespace tricktrack {
   template <typename Hit>
   class CMCell;
 
+  bool areCompatibleTime(float ti, float tm, float to, float timeCut) {
+    if ((tm < ti) || (to < tm)) {
+      return false;
+    }
+    return( ((tm - ti) < timeCut) && ((to - tm) < timeCut));
+
+  }
+
 
 
   int areAlignedRZ(float ri, float zi, float r1, float z1, float ro, float zo, const float ptmin, const float thetaCut)

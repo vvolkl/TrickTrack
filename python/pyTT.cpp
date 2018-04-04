@@ -12,6 +12,12 @@
 using Hit = tricktrack::SpacePoint<size_t>;
 using namespace tricktrack;
 
+template <typename Hit>
+  bool customizedGeometricFilter(const CMCell<Hit>& theInnerCell, const CMCell<Hit>& theOuterCell) {
+  return defaultGeometricFilter(theInnerCell,theOuterCell, 0.8, 0., 0., 0.002, 0.2, 0.8, 0.2 );
+
+    }
+
 
 
 void TTReco(std::array<std::vector<std::array<double, 3>>, 3> theHits, double thetaCut = 0.002,
@@ -79,7 +85,7 @@ void TTReco(std::array<std::vector<std::array<double, 3>>, 3> theHits, double th
     g.theRootLayers.push_back(0);
 
     auto automaton = new HitChainMaker<Hit>(g);
-    automaton->createAndConnectCells(doublets, region, thetaCut, phiCut, hardPtCut);
+    automaton->createAndConnectCells(doublets, customizedGeometricFilter);
     automaton->evolve(3);
     automaton->findNtuplets(foundTracklets, 3);
     std::cout << "found Tracklets: " << foundTracklets.size() << std::endl;
@@ -89,4 +95,7 @@ PYBIND11_MODULE(pyTT, m) {
       m.doc() = "pybind11 example plugin"; // optional module docstring
 
           m.def("TTReco", &TTReco, "Top level function for trick track reco",  pybind11::arg("hardPtCut") = 0.0, pybind11::arg("ptMin") = 0.8, pybind11::arg("regionOriginRadius") = 0.02, pybind11::arg("phiCut") = 0.2, pybind11::arg("thetaCut") = 0.002, pybind11::arg("theHits") = 0);
+          m.def("areAlignedRZ", &areAlignedRZ, "geometric hit filter");
+          m.def("haveSimilarCurvature", &haveSimilarCurvature, "geometric hit filter");
+          m.def("haveSimilarCurvature", &haveSimilarCurvature, "geometric hit filter");
 }
