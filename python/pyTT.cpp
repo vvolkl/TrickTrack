@@ -11,6 +11,7 @@
 
 using Hit = tricktrack::SpacePoint<size_t>;
 using namespace tricktrack;
+using namespace std::placeholders;
 
 template <typename Hit>
   bool customizedGeometricFilter(const CMCell<Hit>& theInnerCell, const CMCell<Hit>& theOuterCell) {
@@ -83,9 +84,11 @@ void TTReco(std::array<std::vector<std::array<double, 3>>, 3> theHits, double th
     g.theLayerPairs.push_back(lp1);
     g.theLayerPairs.push_back(lp2);
     g.theRootLayers.push_back(0);
+    
+  TripletFilter<Hit> ff = std::bind(defaultGeometricFilter<Hit>, _1, _2,  0.8, 0., 0., 0.002, 0.2, 0.8, 0.2 );
 
     auto automaton = new HitChainMaker<Hit>(g);
-    automaton->createAndConnectCells(doublets, customizedGeometricFilter);
+    automaton->createAndConnectCells(doublets, ff);
     automaton->evolve(3);
     automaton->findNtuplets(foundTracklets, 3);
     std::cout << "found Tracklets: " << foundTracklets.size() << std::endl;

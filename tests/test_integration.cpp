@@ -74,7 +74,8 @@ void findTripletsForTest(const TrackingRegion& region,
   
   auto automaton = new HitChainMaker<Hit>(g);
 
-  automaton->createAndConnectCells(doublets, customizedGeometricFilter);
+  TripletFilter<Hit> ff = std::bind(defaultGeometricFilter<Hit>, _1, _2,  0.8, 0., 0., 0.002, 0.2, 0.8, 0.2 );
+  automaton->createAndConnectCells(doublets, ff);
   automaton->evolve(3);
   automaton->findNtuplets(foundTracklets, 3);
 }

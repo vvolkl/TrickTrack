@@ -2,6 +2,7 @@
 #define TRICKTRACK_HITCHAINMAKER_H
 
 #include <array>
+#include <functional>
 #include <memory>
 #include "tricktrack/CMCell.h"
 #include "tricktrack/CMGraph.h"

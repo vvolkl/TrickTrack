@@ -4,6 +4,7 @@
 #include <cmath>
 #include <array>
 #include <iostream>
+#include <functional>
 
 #include "tricktrack/HitDoublets.h"
 
@@ -15,7 +16,7 @@ namespace tricktrack {
 namespace tricktrack {
 
   template <typename Hit>
-  using TripletFilter = bool (const CMCell<Hit> &, const CMCell <Hit>&);
+  using TripletFilter = std::function<bool (const CMCell<Hit> &, const CMCell <Hit>&)>;
 
 
 
