@@ -11,7 +11,7 @@ namespace tricktrack {
   template <typename Hit>
   class CMCell;
 
-  bool areCompatibleTime(float ti, float tm, float to, float timeCut) {
+inline  bool areCompatibleTime(float ti, float tm, float to, float timeCut) {
     if ((tm < ti) || (to < tm)) {
       return false;
     }
@@ -21,7 +21,7 @@ namespace tricktrack {
 
 
 
-  int areAlignedRZ(float ri, float zi, float r1, float z1, float ro, float zo, const float ptmin, const float thetaCut)
+inline  int areAlignedRZ(float ri, float zi, float r1, float z1, float ro, float zo, const float ptmin, const float thetaCut)
   {
     float radius_diff = std::abs(r1 - ro);
     float distance_13_squared = radius_diff*radius_diff + (z1 - zo)*(z1 - zo);
@@ -33,7 +33,7 @@ namespace tricktrack {
   }
 
   /// check two cells for compatibility using the curvature in x-y plane
-  bool haveSimilarCurvature(float x1, float y1, float x2, float y2, float x3, float y3, 
+inline  bool haveSimilarCurvature(float x1, float y1, float x2, float y2, float x3, float y3, 
 			    const float region_origin_x, const float region_origin_y, const float region_origin_radius, const float phiCut, const float hardPtCut, const float ptmin)
   {
     
