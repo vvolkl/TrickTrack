@@ -6,7 +6,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-filename = '/home/vali/.kaggle/competitions/trackml-particle-identification/train_1/event000001000'
+filename = '/eos/cms/store/cmst3/group/dehep/convPixels/TrackML/train_100_events/event000001000'
 
 hits, cells, particles, truth = load_event(filename)
 #print event_id, len(hits)
@@ -26,9 +26,9 @@ print hl2.size
 print hl3.size
 
 #TODO: use pd directly
-d1 =  [list(x) for x in hl1[["x", "y", "z"]].values[:15]]
-d2 =  [list(x) for x in hl2[["x", "y", "z"]].values[:15]]
-d3 =  [list(x) for x in hl3[["x", "y", "z"]].values[:15]]
+d1 =  [list(x) for x in hl1[["x", "y", "z"]].values[:1000]]
+d2 =  [list(x) for x in hl2[["x", "y", "z"]].values[:1000]]
+d3 =  [list(x) for x in hl3[["x", "y", "z"]].values[:1000]]
 
 
 print d1
@@ -37,5 +37,5 @@ print d3
 
 # xyz coordinates of hits on three seeding layers
 layerPoints = [d1, d2, d3]
-result = TTReco(layerPoints, ptMin=0., phiCut=0., thetaCut=100., regionOriginRadius=100)
+result = TTReco(layerPoints, ptMin=0., phiCut=0., phiCut_d = 0.4,  thetaCut=100., regionOriginRadius=100)
 print len(result)
