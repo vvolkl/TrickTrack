@@ -21,7 +21,7 @@ template <typename Hit>
 
 
 
-void TTReco(std::array<std::vector<std::array<double, 3>>, 3> theHits, double thetaCut = 0.002,
+std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<double, 3>>, 3> theHits, double thetaCut = 0.002,
                                                         double phiCut = 0.2,
                                                         double ptMin = 0.8,
                                                         double regionOriginRadius = 0.02,
@@ -30,7 +30,7 @@ void TTReco(std::array<std::vector<std::array<double, 3>>, 3> theHits, double th
     // geometric information used for cuts
     const TrackingRegion region(0, 0, regionOriginRadius, ptMin);
 
-    // create Tri
+    std::cout << "create TrickTrack Points ... " << std::endl;
     std::vector<Hit> inner_hits;
     for (auto e: theHits[0]) {
       inner_hits.push_back(Hit(e[0], e[1], e[2], 0));
@@ -44,6 +44,7 @@ void TTReco(std::array<std::vector<std::array<double, 3>>, 3> theHits, double th
       outer_hits.push_back(Hit(e[0], e[1], e[2], 0));
     }
 
+    std::cout << "create doublets ... " << std::endl;
     std::vector<CMCell<Hit>::CMntuplet> foundTracklets;
     std::vector<HitDoublets<Hit>*> doublets;
     auto doublet1 = new HitDoublets<Hit>(inner_hits, middle_hits);
@@ -85,13 +86,19 @@ void TTReco(std::array<std::vector<std::array<double, 3>>, 3> theHits, double th
     g.theLayerPairs.push_back(lp2);
     g.theRootLayers.push_back(0);
     
-  TripletFilter<Hit> ff = std::bind(defaultGeometricFilter<Hit>, _1, _2,  0.8, 0., 0., 0.002, 0.2, 0.8, 0.2 );
+    TripletFilter<Hit> ff = std::bind(defaultGeometricFilter<Hit>, _1, _2,  ptMin, 0., 0., regionOriginRadius, phiCut, hardPtCut, thetaCut );
 
     auto automaton = new HitChainMaker<Hit>(g);
+    std::cout << "createAndConnectCells ..." << std::endl;
     automaton->createAndConnectCells(doublets, ff);
+    std::cout << "evolve..." << std::endl;
     automaton->evolve(3);
     automaton->findNtuplets(foundTracklets, 3);
     std::cout << "found Tracklets: " << foundTracklets.size() << std::endl;
+    std::vector<std::vector<unsigned int>> result = foundTracklets;
+    return result;
+
+
 }
 
 PYBIND11_MODULE(pyTT, m) {
