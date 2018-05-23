@@ -23,6 +23,7 @@ template <typename Hit>
 
 std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<double, 3>>, 3> theHits, double thetaCut = 0.002,
                                                         double phiCut = 0.2,
+							double phiCut_d = 0.2,
                                                         double ptMin = 0.8,
                                                         double regionOriginRadius = 0.02,
                                                         double hardPtCut = 0.0  ) {
@@ -32,16 +33,22 @@ std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<
 
     std::cout << "create TrickTrack Points ... " << std::endl;
     std::vector<Hit> inner_hits;
+    int count1 = 0;
+    int count2 = 0;
+    int count3 = 0;
     for (auto e: theHits[0]) {
-      inner_hits.push_back(Hit(e[0], e[1], e[2], 0));
+      inner_hits.push_back(Hit(e[0], e[1], e[2], count1));
+      count1++;
     }
     std::vector<Hit> middle_hits;
     for (auto e: theHits[1]) {
-      middle_hits.push_back(Hit(e[0], e[1], e[2], 0));
+      middle_hits.push_back(Hit(e[0], e[1], e[2], count2));
+      count2++;
     }
     std::vector<Hit>  outer_hits;
     for (auto e: theHits[2]) {
-      outer_hits.push_back(Hit(e[0], e[1], e[2], 0));
+      outer_hits.push_back(Hit(e[0], e[1], e[2], count3));
+      count3++;
     }
 
     std::cout << "create doublets ... " << std::endl;
@@ -54,14 +61,26 @@ std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<
 
     for (const auto& p0 : inner_hits) {
       for (const auto& p1 : middle_hits) {
-        doublets[0]->add(p0.identifier(), p1.identifier());
+       	double phi0 = p0.phi();
+        double phi1 = p1.phi();
+        double dPhi = M_PI - std::fabs(std::fabs(phi1 - phi0) - M_PI);
+	std::cout<<"phi0: "<<phi0<<", phi1: "<<phi1<<", dPhi: "<<dPhi<<std::endl;
+        if(dPhi < phiCut_d)
+        	doublets[0]->add(p0.identifier(), p1.identifier());
       }
     }
     for (const auto& p1 : middle_hits) {
       for (const auto& p2 : outer_hits) {
-        doublets[1]->add(p1.identifier(), p2.identifier());
+       	double phi1 = p1.phi();
+        double phi2 = p2.phi();
+        double dPhi = M_PI - std::fabs(std::fabs(phi2 - phi1) - M_PI);
+	std::cout<<"phi1: "<<phi1<<", phi2: "<<phi2<<", dPhi: "<<dPhi<<std::endl;
+        if(dPhi < phiCut_d)
+                doublets[1]->add(p1.identifier(), p2.identifier());
       }
     }
+ 
+    std::cout<<"d1: "<<doublets[0]->size()<<", d2: "<<doublets[1]->size()<<std::endl;
 
     auto l1 = CMLayer("innerLayer", 100000);
     auto l2 = CMLayer("middleLayer", 100000);
@@ -104,7 +123,7 @@ std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<
 PYBIND11_MODULE(pyTT, m) {
       m.doc() = "pybind11 example plugin"; // optional module docstring
 
-          m.def("TTReco", &TTReco, "Top level function for trick track reco",  pybind11::arg("hardPtCut") = 0.0, pybind11::arg("ptMin") = 0.8, pybind11::arg("regionOriginRadius") = 0.02, pybind11::arg("phiCut") = 0.2, pybind11::arg("thetaCut") = 0.002, pybind11::arg("theHits") = 0);
+          m.def("TTReco", &TTReco, "Top level function for trick track reco",  pybind11::arg("hardPtCut") = 0.0, pybind11::arg("ptMin") = 0.8, pybind11::arg("regionOriginRadius") = 0.02, pybind11::arg("phiCut") = 0.2, pybind11::arg("phiCut_d") = 0.2,pybind11::arg("thetaCut") = 0.002, pybind11::arg("theHits") = 0);
           m.def("areAlignedRZ", &areAlignedRZ, "geometric hit filter");
           m.def("haveSimilarCurvature", &haveSimilarCurvature, "geometric hit filter");
           m.def("haveSimilarCurvature", &haveSimilarCurvature, "geometric hit filter");
