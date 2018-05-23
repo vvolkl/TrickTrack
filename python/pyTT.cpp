@@ -23,10 +23,18 @@ template <typename Hit>
 
 std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<double, 3>>, 3> theHits, double thetaCut = 0.002,
                                                         double phiCut = 0.2,
-							double phiCut_d = 0.2,
+                                                        double phiCut_d = 0.2,
                                                         double ptMin = 0.8,
                                                         double regionOriginRadius = 0.02,
                                                         double hardPtCut = 0.0  ) {
+
+    std::cout << "arguments: "  << std::endl
+    << "\tthetaCut: " <<  thetaCut << std::endl
+    << "\tphiCut: " <<  phiCut<< std::endl 
+    << "\tphiCut_d: " << phiCut_d << std::endl
+    << "\tptMin: " << ptMin << std::endl
+    << "\tregionOriginRadius: " <<  regionOriginRadius << std::endl
+    << "\thardPtCut: " << hardPtCut << std::endl; 
 
     // geometric information used for cuts
     const TrackingRegion region(0, 0, regionOriginRadius, ptMin);
@@ -123,8 +131,14 @@ std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<
 PYBIND11_MODULE(pyTT, m) {
       m.doc() = "pybind11 example plugin"; // optional module docstring
 
-          m.def("TTReco", &TTReco, "Top level function for trick track reco",  pybind11::arg("hardPtCut") = 0.0, pybind11::arg("ptMin") = 0.8, pybind11::arg("regionOriginRadius") = 0.02, pybind11::arg("phiCut") = 0.2, pybind11::arg("phiCut_d") = 0.2,pybind11::arg("thetaCut") = 0.002, pybind11::arg("theHits") = 0);
+          m.def("TTReco", &TTReco, "Top level function for trick track reco", 
+          pybind11::arg("theHits"), 
+          pybind11::arg("thetaCut") = 0.002, 
+          pybind11::arg("phiCut") = 0.2, 
+          pybind11::arg("phiCut_d") = 0.2, 
+          pybind11::arg("ptMin") = 0.8,  
+          pybind11::arg("regionOriginRadius") = 0.02, 
+          pybind11::arg("hardPtCut") = 0.0);
           m.def("areAlignedRZ", &areAlignedRZ, "geometric hit filter");
-          m.def("haveSimilarCurvature", &haveSimilarCurvature, "geometric hit filter");
           m.def("haveSimilarCurvature", &haveSimilarCurvature, "geometric hit filter");
 }
