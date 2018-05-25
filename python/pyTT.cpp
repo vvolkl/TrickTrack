@@ -7,9 +7,46 @@
 // Header for interface we want to test
 #include "tricktrack/HitChainMaker.h"
 #include "tricktrack/HitDoublets.h"
-#include "tricktrack/SpacePoint.h"
+//#include "tricktrack/SpacePoint.h"
 
-using Hit = tricktrack::SpacePoint<size_t>;
+struct Vector3D {
+
+  Vector3D(double x, double y, double z) : m_x(x), m_y(y), m_z(z) {}
+
+  double m_x;
+  double m_y;
+  double m_z;
+
+  double x() const { return m_x; }
+  double y() const { return m_y; }
+  double z() const { return m_z; }
+};
+
+/// @brief 3D space point for track seeding.
+///
+class MLSpacePoint {
+public:
+  MLSpacePoint(double x, double y, double z, unsigned int truth_id, unsigned dataframe_index, size_t id) : m_position(x, y, z), m_truth_id(truth_id), m_dataframe_index(dataframe_index), m_identifier(id)  {}
+
+  const Vector3D& position() const { return m_position; }
+  double x() const { return m_position.x(); }
+  double y() const { return m_position.y(); }
+  double z() const { return m_position.z(); }
+  double rho() const { return std::sqrt(std::pow(m_position.x(), 2) + std::pow(m_position.y(), 2)); }
+  double phi() const { return std::atan2(m_position.y(), m_position.x()); }
+  const size_t& identifier() const { return m_identifier; }
+  unsigned int truth_id() const {return m_truth_id;};
+  unsigned int dataframe_index() const {return m_dataframe_index;};
+
+private:
+  Vector3D m_position;
+
+  size_t m_identifier;
+  unsigned int m_truth_id;
+  unsigned int m_dataframe_index;
+};
+
+using Hit = MLSpacePoint;
 using namespace tricktrack;
 using namespace std::placeholders;
 
@@ -21,7 +58,7 @@ template <typename Hit>
 
 
 
-std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<double, 3>>, 3> theHits, double thetaCut = 0.002,
+std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<double, 5>>, 3> theHits, double thetaCut = 0.002,
                                                         double phiCut = 0.2,
                                                         double phiCut_d = 0.2,
                                                         double ptMin = 0.8,
@@ -45,17 +82,17 @@ std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<
     int count2 = 0;
     int count3 = 0;
     for (auto e: theHits[0]) {
-      inner_hits.push_back(Hit(e[0], e[1], e[2], count1));
+      inner_hits.push_back(Hit(e[0], e[1], e[2], e[3], e[4], count1));
       count1++;
     }
     std::vector<Hit> middle_hits;
     for (auto e: theHits[1]) {
-      middle_hits.push_back(Hit(e[0], e[1], e[2], count2));
+      middle_hits.push_back(Hit(e[0], e[1], e[2], e[3], e[4], count2));
       count2++;
     }
     std::vector<Hit>  outer_hits;
     for (auto e: theHits[2]) {
-      outer_hits.push_back(Hit(e[0], e[1], e[2], count3));
+      outer_hits.push_back(Hit(e[0], e[1], e[2], e[3], e[4], count3));
       count3++;
     }
 
@@ -72,7 +109,7 @@ std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<
        	double phi0 = p0.phi();
         double phi1 = p1.phi();
         double dPhi = M_PI - std::fabs(std::fabs(phi1 - phi0) - M_PI);
-	std::cout<<"phi0: "<<phi0<<", phi1: "<<phi1<<", dPhi: "<<dPhi<<std::endl;
+	     //std::cout<<"phi0: "<<phi0<<", phi1: "<<phi1<<", dPhi: "<<dPhi<<std::endl;
         if(dPhi < phiCut_d)
         	doublets[0]->add(p0.identifier(), p1.identifier());
       }
@@ -82,7 +119,7 @@ std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<
        	double phi1 = p1.phi();
         double phi2 = p2.phi();
         double dPhi = M_PI - std::fabs(std::fabs(phi2 - phi1) - M_PI);
-	std::cout<<"phi1: "<<phi1<<", phi2: "<<phi2<<", dPhi: "<<dPhi<<std::endl;
+        //	std::cout<<"phi1: "<<phi1<<", phi2: "<<phi2<<", dPhi: "<<dPhi<<std::endl;
         if(dPhi < phiCut_d)
                 doublets[1]->add(p1.identifier(), p2.identifier());
       }
@@ -122,9 +159,17 @@ std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<
     automaton->evolve(3);
     automaton->findNtuplets(foundTracklets, 3);
     std::cout << "found Tracklets: " << foundTracklets.size() << std::endl;
-    std::vector<std::vector<unsigned int>> result = foundTracklets;
+    std::vector<std::vector<unsigned int>> result;
+    auto cells = automaton->getAllCells();
+    for (const auto& tracklet : foundTracklets) {
+      result.push_back(std::vector<unsigned int>());
+      result.back().push_back(cells[tracklet[0]].getInnerHit().dataframe_index());
+      for(const auto& t: tracklet) {
+        result.back().push_back(cells[t].getOuterHit().dataframe_index());
+      }
+    }
+		
     return result;
-
 
 }
 

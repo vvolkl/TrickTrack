@@ -16,6 +16,7 @@ hits['r'] = np.sqrt(hits['y']*hits['y']+hits['x']*hits['x'])
 hits['tpt'] = np.sqrt(hits['tpx']*hits['tpx']+hits['tpy']*hits['tpy'])
 hits['up0'] =0
 hits['up1'] =0
+hits['index'] = hits.index
 hits.sort_values(by=['phi'],inplace=True)
 hl1 = hits.query('volume_id ==8 & layer_id==2')
 hl2 = hits.query('volume_id ==8 & layer_id==4')
@@ -25,17 +26,19 @@ print hl1.size
 print hl2.size
 print hl3.size
 
-d1 =  [list(x) for x in hl1[["x", "y", "z"]].values[:200]]
-d2 =  [list(x) for x in hl2[["x", "y", "z"]].values[:200]]
-d3 =  [list(x) for x in hl3[["x", "y", "z"]].values[:200]]
+i1 = hl1.index
 
+d1 =  [list(x) for x in hl1[["x", "y", "z", "particle_id", "index"]].values]
+d2 =  [list(x) for x in hl2[["x", "y", "z", "particle_id", "index"]].values]
+d3 =  [list(x) for x in hl3[["x", "y", "z", "particle_id", "index"]].values]
 
-print d1
-print d2
-print d3
 
 # xyz coordinates of hits on three seeding layers
 layerPoints = [d1, d2, d3]
 #result = TTReco(layerPoints, ptMin=0.8,  regionOriginRadius=20)
 result = TTReco(theHits=layerPoints, thetaCut=0.002, phiCut=1., phiCut_d = 0.04, ptMin=0.8, regionOriginRadius=100, hardPtCut=0.0)
 print len(result)
+for indices in result[:4]:
+  for i in indices:
+    print hits.loc[i],
+  print "\n\n\n"
