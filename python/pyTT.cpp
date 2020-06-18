@@ -26,7 +26,7 @@ struct Vector3D {
 ///
 class MLSpacePoint {
 public:
-  MLSpacePoint(double x, double y, double z, unsigned int truth_id, unsigned dataframe_index, size_t id) : m_position(x, y, z), m_truth_id(truth_id), m_dataframe_index(dataframe_index), m_identifier(id)  {}
+  MLSpacePoint(double x, double y, double z, long unsigned int truth_id, unsigned dataframe_index, size_t id) : m_position(x, y, z), m_truth_id(truth_id), m_dataframe_index(dataframe_index), m_identifier(id)  {}
 
   const Vector3D& position() const { return m_position; }
   double x() const { return m_position.x(); }
@@ -35,14 +35,14 @@ public:
   double rho() const { return std::sqrt(std::pow(m_position.x(), 2) + std::pow(m_position.y(), 2)); }
   double phi() const { return std::atan2(m_position.y(), m_position.x()); }
   const size_t& identifier() const { return m_identifier; }
-  unsigned int truth_id() const {return m_truth_id;};
-  unsigned int dataframe_index() const {return m_dataframe_index;};
+  long unsigned int truth_id() const {return m_truth_id;};
+  long unsigned int dataframe_index() const {return m_dataframe_index;};
 
 private:
   Vector3D m_position;
 
   size_t m_identifier;
-  unsigned int m_truth_id;
+  long unsigned int m_truth_id;
   unsigned int m_dataframe_index;
 };
 
@@ -58,7 +58,7 @@ template <typename Hit>
 
 
 
-std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<double, 5>>, 3> theHits, double thetaCut = 0.002,
+std::vector<std::vector<long unsigned int>> TTReco(std::array<std::vector<std::array<double, 3>>, 3> theHits, std::array<std::vector<std::array<long unsigned int, 2 >>, 3> theIds, double thetaCut = 0.002,
                                                         double phiCut = 0.2,
                                                         double phiCut_d = 0.2,
                                                         double ptMin = 0.8,
@@ -76,26 +76,27 @@ std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<
     // geometric information used for cuts
     const TrackingRegion region(0, 0, regionOriginRadius, ptMin);
 
+    std::cout << "hit vector sizes: " << theHits[0].size() << "\t" << theHits[1].size() << "\t" << theHits[2].size() << std::endl;
     std::cout << "create TrickTrack Points ... " << std::endl;
     std::vector<Hit> inner_hits;
-    int count1 = 0;
-    int count2 = 0;
-    int count3 = 0;
-    for (auto e: theHits[0]) {
-      inner_hits.push_back(Hit(e[0], e[1], e[2], e[3], e[4], count1));
-      count1++;
+    for (int count1 = 0; count1 < theHits[0].size(); ++count1) {
+      auto & e = theHits[0][count1];
+      std::array<long unsigned int, 2> _id = theIds[0][count1];
+      inner_hits.push_back(Hit(e[0], e[1], e[2], _id[0], _id[1], count1));
     }
     std::vector<Hit> middle_hits;
-    for (auto e: theHits[1]) {
-      middle_hits.push_back(Hit(e[0], e[1], e[2], e[3], e[4], count2));
-      count2++;
+    for (int count2 = 0; count2 < theHits[1].size(); ++count2) {
+      auto & e = theHits[1][count2];
+      std::array<long unsigned int, 2> _id = theIds[1][count2];
+      middle_hits.push_back(Hit(e[0], e[1], e[2], _id[0], _id[1], count2));
     }
     std::vector<Hit>  outer_hits;
-    for (auto e: theHits[2]) {
-      outer_hits.push_back(Hit(e[0], e[1], e[2], e[3], e[4], count3));
-      count3++;
+    for (int count3 = 0; count3 < theHits[2].size(); ++count3) {
+      auto & e = theHits[2][count3];
+      std::array<long unsigned int, 2> _id = theIds[2][count3];
+      outer_hits.push_back(Hit(e[0], e[1], e[2], _id[0], _id[1], count3));
     }
-
+    std::cout << "hit vector sizes: " << inner_hits.size() << "\t" << middle_hits.size() << "\t" << outer_hits.size() << std::endl;
     std::cout << "create doublets ... " << std::endl;
     std::vector<CMCell<Hit>::CMntuplet> foundTracklets;
     std::vector<HitDoublets<Hit>*> doublets;
@@ -104,27 +105,37 @@ std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<
     doublets.push_back(doublet1);
     doublets.push_back(doublet2);
 
+    unsigned int numGoodDoublets = 0;
     for (const auto& p0 : inner_hits) {
       for (const auto& p1 : middle_hits) {
        	double phi0 = p0.phi();
         double phi1 = p1.phi();
-        double dPhi = M_PI - std::fabs(std::fabs(phi1 - phi0) - M_PI);
-	     //std::cout<<"phi0: "<<phi0<<", phi1: "<<phi1<<", dPhi: "<<dPhi<<std::endl;
-        if(dPhi < phiCut_d)
+        double dPhi = std::fabs(M_PI - std::fabs(std::fabs(phi1 - phi0) - M_PI));
+        if(dPhi < phiCut_d && std::abs(p0.z() - p1.z()) < 280) {
         	doublets[0]->add(p0.identifier(), p1.identifier());
+          if (p0.truth_id() == p1.truth_id()) {
+            numGoodDoublets++;
+          }
+        }
       }
     }
+    std::cout << "found " << numGoodDoublets << " / " << doublets[0]->size() << "good doublets" << std::endl;
+    numGoodDoublets = 0;
     for (const auto& p1 : middle_hits) {
       for (const auto& p2 : outer_hits) {
        	double phi1 = p1.phi();
         double phi2 = p2.phi();
-        double dPhi = M_PI - std::fabs(std::fabs(phi2 - phi1) - M_PI);
-        //	std::cout<<"phi1: "<<phi1<<", phi2: "<<phi2<<", dPhi: "<<dPhi<<std::endl;
-        if(dPhi < phiCut_d)
+        double dPhi = std::abs(M_PI - std::fabs(std::fabs(phi2 - phi1) - M_PI));
+        if(dPhi < phiCut_d && std::abs(p1.z() - p2.z())<280.) {
                 doublets[1]->add(p1.identifier(), p2.identifier());
+            if (p1.truth_id() == p2.truth_id()) {
+              numGoodDoublets++;
+            }
+        }
       }
     }
  
+    std::cout << "found " << numGoodDoublets << " / " << doublets[0]->size() << "good doublets" << std::endl;
     std::cout<<"d1: "<<doublets[0]->size()<<", d2: "<<doublets[1]->size()<<std::endl;
 
     auto l1 = CMLayer("innerLayer", 100000);
@@ -159,16 +170,36 @@ std::vector<std::vector<unsigned int>> TTReco(std::array<std::vector<std::array<
     automaton->evolve(3);
     automaton->findNtuplets(foundTracklets, 3);
     std::cout << "found Tracklets: " << foundTracklets.size() << std::endl;
-    std::vector<std::vector<unsigned int>> result;
+    std::vector<std::vector<long unsigned int>> result;
+
     auto cells = automaton->getAllCells();
+    unsigned int numcorrect = 0;
+    unsigned int numDuplicates = 0;
+    unsigned int numFalse = 0;
+    std::set<long unsigned int> foundParticles;
     for (const auto& tracklet : foundTracklets) {
-      result.push_back(std::vector<unsigned int>());
+      result.push_back(std::vector<long unsigned int>());
       result.back().push_back(cells[tracklet[0]].getInnerHit().dataframe_index());
+      long unsigned int correct = cells[tracklet[0]].getInnerHit().truth_id();
       for(const auto& t: tracklet) {
         result.back().push_back(cells[t].getOuterHit().dataframe_index());
+        if (cells[t].getOuterHit().truth_id() != correct ) {
+          correct = -1;
+        } 
       }
-    }
+      if (correct == -1) {
+        numFalse += 1;
+      } else { if( foundParticles.find( correct) != foundParticles.end()) {
+            std::cout << correct << std::endl;
+            numDuplicates++;
+          } else {
+           foundParticles.insert(correct); 
+           numcorrect += 1;
+          }
+        }
+      }
 		
+    std::cout << "numberOfTracklets: " << foundTracklets.size() << "\tnumber of true tracklets: " << numcorrect << "\t number of fakes: " << numFalse << "\t: number of duplicate correct: " << numDuplicates <<  std::endl;
     return result;
 
 }
@@ -178,6 +209,7 @@ PYBIND11_MODULE(pyTT, m) {
 
           m.def("TTReco", &TTReco, "Top level function for trick track reco", 
           pybind11::arg("theHits"), 
+          pybind11::arg("theIds"), 
           pybind11::arg("thetaCut") = 0.002, 
           pybind11::arg("phiCut") = 0.2, 
           pybind11::arg("phiCut_d") = 0.2, 
